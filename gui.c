@@ -1,11 +1,11 @@
-/*      
-  _____     ___ ____ 
+/*
+  _____     ___ ____
    ____|   |    ____|      PS2 Open Source Project
-  |     ___|   |____       
+  |     ___|   |____
   
 ---------------------------------------------------------------------------
 
-    Copyright (C) 2008 - Neme & jimmikaelkael (www.psx-scene.com) 
+    Copyright (C) 2008 - Neme & jimmikaelkael (www.psx-scene.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the Free McBoot License.
@@ -30,7 +30,7 @@
 
  GUI source file
  
---------------------------------------------------------------------------- 
+---------------------------------------------------------------------------
 */
 
 #include "fmcb.h"
@@ -71,17 +71,17 @@ int FONT_SPACING  = 1;
 int FONT_Y        = 75;
 
 // define colors
-#define Black  		GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00)		
+#define Black  		GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00)
 #define Blue  		GS_SETREG_RGBAQ(0x18,0x23,0xFF,0x80,0x00)
-#define White  		GS_SETREG_RGBAQ(0xFF,0xFF,0xFF,0x80,0x00)		
-#define Gray  		GS_SETREG_RGBAQ(0x33,0x33,0x33,0x80,0x00)		
+#define White  		GS_SETREG_RGBAQ(0xFF,0xFF,0xFF,0x80,0x00)
+#define Gray  		GS_SETREG_RGBAQ(0x33,0x33,0x33,0x80,0x00)
 #define TexCol 		GS_SETREG_RGBAQ(0x80,0x80,0x80,0x80,0x00)
 
 // sounds related
 static short snd_buf_L[1024] __attribute__((aligned (64)));
 static short snd_buf_R[1024] __attribute__((aligned (64)));
 u16 *pSampleBuf;
-int nSizeSample; 
+int nSizeSample;
 int snd_pos;
 int snd_finished;
 int SAMPLES_TICK = 800; // default to NTSC, PAL must use 960
@@ -141,14 +141,6 @@ int log_result[MAX_LOG_LINES];
 // PNG handling code: from MyPS2 by ntba2
 //
 typedef struct {
-	int width;
-	int height;
-	int bit_depth;
-
-	void *priv;
-} pngData;
-
-typedef struct {
 	png_structp	png_ptr;
 	png_infop	info_ptr, end_info;
 
@@ -157,6 +149,14 @@ typedef struct {
 
 	u8 *data;
 } pngPrivate;
+
+typedef struct {
+	png_uint_32 width;
+	png_uint_32 height;
+	int bit_depth;
+
+	pngPrivate *priv;
+} pngData;
 
 //--------------------------------------------------------------
 
@@ -191,8 +191,8 @@ pngData *pngOpenRAW(u8 *data, int size)
 	priv->png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (!priv->png_ptr) {
 		#ifdef DEBUG
-			printf("PNG Read Struct Init Failed\n");		
-		#endif	
+			printf("PNG Read Struct Init Failed\n");
+		#endif
 		free(png);
 		return NULL;
 	}
@@ -229,7 +229,7 @@ pngData *pngOpenRAW(u8 *data, int size)
 
 	#ifdef DEBUG
 		printf("PNG info: width=%3d ", png->width);
-		printf("height=%3d ", png->height);	
+		printf("height=%3d ", png->height);
 		printf("bit depth=%2d ", png->bit_depth);
 		printf("color type=%2d\n", priv->png_ptr->color_type);
 	#endif
@@ -248,7 +248,7 @@ int pngReadImage(pngData *png, u8 *dest)
 	int y;
 
 	row_pointers = png_get_rows(priv->png_ptr, priv->info_ptr);
-	row_ptr = 0;		
+	row_ptr = 0;
 
 	for (i = 0; i < png_get_image_height(priv->png_ptr, priv->info_ptr); i++) {
 		memcpy(dest + row_ptr, row_pointers[i], png_get_rowbytes(priv->png_ptr, priv->info_ptr));
@@ -282,7 +282,7 @@ void pngClose(pngData *png)
 
 //----------------------------------------------------
 
-void Play_Sound(void) 
+void Play_Sound(void)
 {
 	// TO BE CALLED ONCE PER VERTICAL SYNC PERIOD !!!
 	// Uses :
@@ -303,7 +303,7 @@ void Play_Sound(void)
 	//			gsKit_vsync();
 	//		}
 	
-	int i;		
+	int i;
 	int buffered;
 	
 	// Skip audio file header (to avoid it to be put in sound buffer and be played,
@@ -323,13 +323,13 @@ void Play_Sound(void)
 		if ((snd_pos + i) <= (nSizeSample / 2)) {
 			snd_buf_L[i] = pSampleBuf[snd_pos + i];
 			snd_buf_R[i] = snd_buf_L[i];
-		//if (((snd_pos + i) * 2 + 1) <= (nSizeSample / 2)) {   // stereo			
+		//if (((snd_pos + i) * 2 + 1) <= (nSizeSample / 2)) {   // stereo
 			//snd_buf_L[i] = pSampleBuf[(snd_pos + i) * 2 + 0]; // stereo
 			//snd_buf_R[i] = pSampleBuf[(snd_pos + i) * 2 + 1]; // stereo
 			
 		}
 		else {
-			// if no more datas available, then clear left & right buffer 
+			// if no more datas available, then clear left & right buffer
 			snd_buf_L[i] = 0;
 			snd_buf_R[i] = 0;
 		}
@@ -337,19 +337,19 @@ void Play_Sound(void)
 
 	// Enqueue "SAMPLES_TICK" left & right samples
   	buffered = SjPCM_Buffered();
-  	if (buffered < 1*SAMPLES_TICK) 
+  	if (buffered < 1*SAMPLES_TICK)
   		SjPCM_Enqueue(snd_buf_L, snd_buf_R, SAMPLES_TICK, 0); // avoid underrun
-  	if (buffered < 2*SAMPLES_TICK) 
-  		SjPCM_Enqueue(snd_buf_L, snd_buf_R, SAMPLES_TICK, 0); // regular buffer fill	
+  	if (buffered < 2*SAMPLES_TICK)
+  		SjPCM_Enqueue(snd_buf_L, snd_buf_R, SAMPLES_TICK, 0); // regular buffer fill
 
 	// Update sound position
-	if (snd_pos < (nSizeSample / 2)) {	
-		snd_pos += SAMPLES_TICK;		
+	if (snd_pos < (nSizeSample / 2)) {
+		snd_pos += SAMPLES_TICK;
 	//if (snd_pos < (nSizeSample / 4)) { // stereo
 		//snd_pos += SAMPLES_TICK;		 // stereo
 	}
 	else {
-		snd_finished = 1;	
+		snd_finished = 1;
 		#ifdef DEBUG
 			printf("Sound position = %d\n", snd_pos);
 		#endif
@@ -366,11 +366,11 @@ void drawChar_verdana(u32 x, u32 y, u32 width, u32 height, u64 color, u32 c)
 	int u1, u2, v1, v2;
 	
 	x1 = x;
-	x2 = x1 + width;	
+	x2 = x1 + width;
 	y1 = y;
-	y2 = y1 + height;	
+	y2 = y1 + height;
 
-	// Calculate char coordinates int verdana texture			
+	// Calculate char coordinates int verdana texture
 	u1 = (c % (tex_font_verdana.Width/16)) * (tex_font_verdana.Width/16);
 	u2 = u1 + 16;
 	v1 = c - (c % (tex_font_verdana.Height/8)); // careful: 8 rows only !!!
@@ -446,7 +446,7 @@ void draw_log(int alpha)
 {
 	// Draw the log
 	
-	int i;	
+	int i;
 	
 	int pos_x = 40;  // log lines x
 	int pos_x2 = 370; // log result x
@@ -468,7 +468,7 @@ void draw_log(int alpha)
 							tex_icon_error.Width,  // U2
 							tex_icon_error.Height, // V2
 							0,
-							GS_SETREG_RGBAQ(0x80,0x80,0x80, alpha,0x00));		
+							GS_SETREG_RGBAQ(0x80,0x80,0x80, alpha,0x00));
 		}
 		else if (log_result[i] == 1) {
 			// Draw icon OK
@@ -482,7 +482,7 @@ void draw_log(int alpha)
 							tex_icon_ok.Width,  // U2
 							tex_icon_ok.Height, // V2
 							0,
-							GS_SETREG_RGBAQ(0x80,0x80,0x80, alpha,0x00));		
+							GS_SETREG_RGBAQ(0x80,0x80,0x80, alpha,0x00));
 		}
 		else if (log_result[i] == 2) {
 			// do nothing
@@ -506,7 +506,7 @@ void draw_dialog(int alpha_dialog, int alpha_control)
 	char *msg1, *msg2;
 	u64 color_text, color_texture, color_selected, color_unselected;
 	int dialog_start_y = 0;
-	int spacing = 12; 
+	int spacing = 12;
 	int width = 0;
 	int height = 0;
 	int control_spacing = 25;
@@ -516,8 +516,8 @@ void draw_dialog(int alpha_dialog, int alpha_control)
 	color_texture = GS_SETREG_RGBAQ(0x80,0x80,0x80, alpha_dialog,0x00);
 	if (dialog_icon == ICON_DIALOG_ERROR)
 		color_selected = GS_SETREG_RGBAQ(0x92,0x00,0x00, alpha_control,0x00);
-	else	
-		color_selected = GS_SETREG_RGBAQ(0x18,0x23,0xFF, alpha_control,0x00);	
+	else
+		color_selected = GS_SETREG_RGBAQ(0x18,0x23,0xFF, alpha_control,0x00);
 	color_unselected = GS_SETREG_RGBAQ(0x33,0x33,0x33, alpha_dialog,0x00);
 		
 	y2 = 0;
@@ -529,7 +529,7 @@ void draw_dialog(int alpha_dialog, int alpha_control)
 		height += tex_icon_warning.Height;
 	else if (dialog_icon == ICON_DIALOG_ERROR)
 		height += tex_icon_error.Height;
-	height += spacing;	
+	height += spacing;
 	for (i=0; i<MAX_DIALOG_LINES; i++) {
 		if ((dialog_buffer[i] != NULL) && (strlen(dialog_buffer[i]) > 0))
 			height += FONT_HEIGHT;
@@ -559,8 +559,8 @@ void draw_dialog(int alpha_dialog, int alpha_control)
 							tex_icon_ok.Width,  // U2
 							tex_icon_ok.Height, // V2
 							0,
-							color_texture);		
-	}	
+							color_texture);
+	}
 	else if (dialog_icon == ICON_DIALOG_WARNING) {
 		// Calculates coordinates to center the dialog icon warning
 		x1 = (SCREEN_WIDTH - tex_icon_warning.Width) / 2;
@@ -579,8 +579,8 @@ void draw_dialog(int alpha_dialog, int alpha_control)
 							tex_icon_warning.Width,  // U2
 							tex_icon_warning.Height, // V2
 							0,
-							color_texture);		
-	}						
+							color_texture);
+	}
 	else if (dialog_icon == ICON_DIALOG_ERROR) {
 		// Calculates coordinates to center the dialog icon warning
 		x1 = (SCREEN_WIDTH - tex_icon_error.Width) / 2;
@@ -599,26 +599,26 @@ void draw_dialog(int alpha_dialog, int alpha_control)
 							tex_icon_error.Width,  // U2
 							tex_icon_error.Height, // V2
 							0,
-							color_texture);		
-	}						
+							color_texture);
+	}
 	else if (dialog_icon == ICON_DIALOG_NONE) {
 		y2 = dialog_start_y;
 	}
 	
-	// Spacing from icon	
-	y = y2 + spacing;				
+	// Spacing from icon
+	y = y2 + spacing;
 	
 	// Printing dialog buffer
 	for (i=0; i<MAX_DIALOG_LINES; i++) {
 		if ((dialog_buffer[i] != NULL) && (strlen(dialog_buffer[i]) > 0)) {
-				msg = dialog_buffer[i];		
-				// Print centered string 				
+				msg = dialog_buffer[i];
+				// Print centered string
 				drawString_verdana(((
 					SCREEN_WIDTH - getStringWidth_verdana(msg)) / 2),  // X
 					y,   // Y
 					color_text,     // color
 					msg);			// string
-				y += FONT_HEIGHT;		
+				y += FONT_HEIGHT;
 		}
 		
 	}
@@ -633,67 +633,67 @@ void draw_dialog(int alpha_dialog, int alpha_control)
 		if (selected_dialog_button == 0) selected_dialog_button = 1;
 		
 		// Draw centered controls
-		msg1 = "OK";			
-		width = getStringWidth_verdana(msg1);		
+		msg1 = "OK";
+		width = getStringWidth_verdana(msg1);
 		x1 = (SCREEN_WIDTH - width) / 2;
 
-		//if (selected_dialog_button == 1)		
-			 drawString_verdana(x1, y, color_selected, msg1);							
+		//if (selected_dialog_button == 1)
+			 drawString_verdana(x1, y, color_selected, msg1);
 			 
 	}
 	else if (internal_dialog_type == DIALOG_YES_NO) {
 		
-		// set default selected control		
+		// set default selected control
 		if (selected_dialog_button == 0) selected_dialog_button = 2;
 		
-		// Draw centered controls		
-		msg1 = "YES";						
-		msg2 = "NO";						
-		width = getStringWidth_verdana(msg1) + getStringWidth_verdana(msg2) + control_spacing;		
+		// Draw centered controls
+		msg1 = "YES";
+		msg2 = "NO";
+		width = getStringWidth_verdana(msg1) + getStringWidth_verdana(msg2) + control_spacing;
 		x1 = (SCREEN_WIDTH - width) / 2;
 		x2 = x1 + width - getStringWidth_verdana(msg2);
 		
-		if (selected_dialog_button == 1)		
-			 drawString_verdana(x1, y, color_selected, msg1);							
+		if (selected_dialog_button == 1)
+			 drawString_verdana(x1, y, color_selected, msg1);
 		else drawString_verdana(x1, y, color_unselected, msg1);
 
-		if (selected_dialog_button == 2)		
-			 drawString_verdana(x2, y, color_selected, msg2);							
-		else drawString_verdana(x2, y, color_unselected, msg2);							
+		if (selected_dialog_button == 2)
+			 drawString_verdana(x2, y, color_selected, msg2);
+		else drawString_verdana(x2, y, color_unselected, msg2);
 		
-	}	
+	}
 	else if (internal_dialog_type == DIALOG_OK_CANCEL) {
 		
-		// set default selected control		
+		// set default selected control
 		if (selected_dialog_button == 0) selected_dialog_button = 2;
 		
-		// Draw centered controls		
-		msg1 = "OK";						
-		msg2 = "CANCEL";						
-		width = getStringWidth_verdana(msg1) + getStringWidth_verdana(msg2) + control_spacing;		
+		// Draw centered controls
+		msg1 = "OK";
+		msg2 = "CANCEL";
+		width = getStringWidth_verdana(msg1) + getStringWidth_verdana(msg2) + control_spacing;
 		x1 = (SCREEN_WIDTH - width) / 2;
 		x2 = x1 + width - getStringWidth_verdana(msg2);
 				
-		if (selected_dialog_button == 1)		
-			 drawString_verdana(x1, y, color_selected, msg1);							
+		if (selected_dialog_button == 1)
+			 drawString_verdana(x1, y, color_selected, msg1);
 		else drawString_verdana(x1, y, color_unselected, msg1);
 
-		if (selected_dialog_button == 2)		
-			 drawString_verdana(x2, y, color_selected, msg2);							
-		else drawString_verdana(x2, y, color_unselected, msg2);							
-	}	
+		if (selected_dialog_button == 2)
+			 drawString_verdana(x2, y, color_selected, msg2);
+		else drawString_verdana(x2, y, color_unselected, msg2);
+	}
 	else if (internal_dialog_type == DIALOG_ABORT) {
 		
 		// set default selected control
 		if (selected_dialog_button == 0) selected_dialog_button = 1;
 		
 		// Draw centered controls
-		msg1 = "ABORT";			
-		width = getStringWidth_verdana(msg1);		
+		msg1 = "ABORT";
+		width = getStringWidth_verdana(msg1);
 		x1 = (SCREEN_WIDTH - width) / 2;
 
-		//if (selected_dialog_button == 1)		
-			 drawString_verdana(x1, y, color_selected, msg1);							
+		//if (selected_dialog_button == 1)
+			 drawString_verdana(x1, y, color_selected, msg1);
 			 
 	}
 	else if (internal_dialog_type == DIALOG_1_2) {
@@ -701,20 +701,20 @@ void draw_dialog(int alpha_dialog, int alpha_control)
 		// set default selected control
 		if (selected_dialog_button == 0) selected_dialog_button = 1;
 		
-		// Draw centered controls		
-		msg1 = "SLOT 1";						
-		msg2 = "SLOT 2";						
-		width = getStringWidth_verdana(msg1) + getStringWidth_verdana(msg2) + control_spacing;		
+		// Draw centered controls
+		msg1 = "SLOT 1";
+		msg2 = "SLOT 2";
+		width = getStringWidth_verdana(msg1) + getStringWidth_verdana(msg2) + control_spacing;
 		x1 = (SCREEN_WIDTH - width) / 2;
 		x2 = x1 + width - getStringWidth_verdana(msg2);
 				
-		if (selected_dialog_button == 1)		
-			 drawString_verdana(x1, y, color_selected, msg1);							
+		if (selected_dialog_button == 1)
+			 drawString_verdana(x1, y, color_selected, msg1);
 		else drawString_verdana(x1, y, color_unselected, msg1);
 
-		if (selected_dialog_button == 2)		
-			 drawString_verdana(x2, y, color_selected, msg2);							
-		else drawString_verdana(x2, y, color_unselected, msg2);							
+		if (selected_dialog_button == 2)
+			 drawString_verdana(x2, y, color_selected, msg2);
+		else drawString_verdana(x2, y, color_unselected, msg2);
 			 
 	}
 	else if (internal_dialog_type == DIALOG_NONE) {
@@ -763,7 +763,7 @@ void draw_up_panel(int y, int selected_button, int highlight_pulse, int highligh
 							TexCol);
 							
 	// Draw delimiters
-	for (i=1; i<6; i++) { //skip 1st and last up panel delimiters							
+	for (i=1; i<6; i++) { //skip 1st and last up panel delimiters
 		gsKit_prim_sprite_texture(gsGlobal, &tex_bar_delimiter,
 							bar_delimiter_x[i], // X1
 							y,  				// Y1
@@ -775,10 +775,10 @@ void draw_up_panel(int y, int selected_button, int highlight_pulse, int highligh
 							tex_bar_delimiter.Height,						// V2
 							0,
 							TexCol);
-	}							
+	}
 
 	// Draw buttons text
-	for (i=0; i<6; i++) {								
+	for (i=0; i<6; i++) {
 		gsKit_prim_sprite_texture(gsGlobal, &tex_option[i],
 							option_x[i],// X1
 							y + 10,  	// Y1
@@ -789,10 +789,10 @@ void draw_up_panel(int y, int selected_button, int highlight_pulse, int highligh
 							tex_option[i].Width,				// U2
 							tex_option[i].Height,				// V2
 							0,
-							TexCol);							
+							TexCol);
 	}
 
-	// Alpha calculation to control Highlight pulse	
+	// Alpha calculation to control Highlight pulse
 	if (highlight_pulse) {
 		highlight_alpha += amount;
 		if (highlight_alpha >= 0xff) {
@@ -811,16 +811,16 @@ void draw_up_panel(int y, int selected_button, int highlight_pulse, int highligh
 		if (highlight_blw) {
 		stop_pulse_done = 1;
 		highlight_alpha = 0x80;
-		}	
+		}
 		else {
 		stop_pulse_done = 0;
 		if (highlight_alpha <= 0xff) {
 			amount = 6;
-			highlight_alpha += amount;	
+			highlight_alpha += amount;
 			if (highlight_alpha >= 0xff) {
 				highlight_alpha = 0xff;
 				stop_pulse_done = 1;
-			} 	
+			}
 		}
 		}
 	}
@@ -839,7 +839,7 @@ void draw_up_panel(int y, int selected_button, int highlight_pulse, int highligh
 							tex_highlight_bw.Height, 				// V2
 							0,
 							GS_SETREG_RGBAQ(0x80, 0x80, 0x80, highlight_alpha, 0x00));
-		}						
+		}
 	}
 	else {
 		// Draw highlighting on up panel selected button if needed
@@ -855,12 +855,12 @@ void draw_up_panel(int y, int selected_button, int highlight_pulse, int highligh
 							tex_highlight.Height, 				// V2
 							0,
 							GS_SETREG_RGBAQ(0x80, 0x80, 0x80, highlight_alpha, 0x00));
-		}	
-	}					
+		}
+	}
 								
 }
 
-//--------------------------------------------------------------	
+//--------------------------------------------------------------
 
 void draw_down_panel(int y2) // careful : y2 !!!
 {
@@ -879,7 +879,7 @@ void draw_down_panel(int y2) // careful : y2 !!!
 							0,
 							TexCol);
 					
-	// Draw credits for code									
+	// Draw credits for code
 	gsKit_prim_sprite_texture(gsGlobal, &tex_credits_coded,
 							8, 	// X1
 							y2 - 4 - tex_credits_coded.Height,  // Y1
@@ -906,7 +906,7 @@ void draw_down_panel(int y2) // careful : y2 !!!
 							TexCol);
 }
 	
-//--------------------------------------------------------------		
+//--------------------------------------------------------------
 
 void draw_logo(int width, int height, int alpha)
 {
@@ -920,7 +920,7 @@ void draw_logo(int width, int height, int alpha)
 	y1 = (SCREEN_HEIGHT - height) / 2;
 	y2 = y1 + height;
 
-	// Draw logo	
+	// Draw logo
 	gsKit_prim_sprite_texture(gsGlobal, &tex_logo,
 							x1, // X1
 							y1,	// Y1
@@ -931,7 +931,7 @@ void draw_logo(int width, int height, int alpha)
 							tex_logo.Width,  // U2
 							tex_logo.Height, // V2
 							0,
-							GS_SETREG_RGBAQ(0x80, 0x80, 0x80, alpha, 0x00));		
+							GS_SETREG_RGBAQ(0x80, 0x80, 0x80, alpha, 0x00));
 							
 }
 
@@ -944,9 +944,9 @@ void load_Textures(void)
 	pngData *pPng;
 	u8		*pImgData;
 
-	#ifdef DEBUG				
-		printf("1st VRAM Pointer = %08x  \n", gsGlobal->CurrentPointer);	
-	#endif	
+	#ifdef DEBUG
+		printf("1st VRAM Pointer = %08x  \n", gsGlobal->CurrentPointer);
+	#endif
 		
 	//gsGlobal->CurrentPointer = vram_pointer;
 				
@@ -960,19 +960,19 @@ void load_Textures(void)
 				tex_background.Width    = pPng->width;
 				tex_background.Height   = pPng->height;
 				tex_background.Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_background.Vram 	= gsKit_vram_alloc(gsGlobal,
-			 						  		gsKit_texture_size(tex_background.Width, tex_background.Height, tex_background.PSM), 
+			 						  		gsKit_texture_size(tex_background.Width, tex_background.Height, tex_background.PSM),
 			 						  		GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_background);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
-	}	
+	}
 	
 	if ((pPng = pngOpenRAW(&bar_up, size_bar_up)) > 0) { // tex size = 0x8000
 		if ((pImgData = malloc(pPng->width * pPng->height * (pPng->bit_depth / 8))) > 0) {
@@ -984,19 +984,19 @@ void load_Textures(void)
 				tex_bar_up.Width 	= pPng->width;
 				tex_bar_up.Height 	= pPng->height;
 				tex_bar_up.Filter 	= GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_bar_up.Vram 	= gsKit_vram_alloc(gsGlobal,
-			 							gsKit_texture_size(tex_bar_up.Width, tex_bar_up.Height, tex_bar_up.PSM), 
+			 							gsKit_texture_size(tex_bar_up.Width, tex_bar_up.Height, tex_bar_up.PSM),
 			 							GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_bar_up);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
-	}		
+	}
 	
 	if ((pPng = pngOpenRAW(&bar_down, size_bar_down)) > 0) { // tex size = 0x8000
 		if ((pImgData = malloc(pPng->width * pPng->height * (pPng->bit_depth / 8))) > 0) {
@@ -1008,17 +1008,17 @@ void load_Textures(void)
 				tex_bar_down.Width    = pPng->width;
 				tex_bar_down.Height   = pPng->height;
 				tex_bar_down.Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_bar_down.Vram 	  = gsKit_vram_alloc(gsGlobal,
-			 							  gsKit_texture_size(tex_bar_down.Width, tex_bar_down.Height, tex_bar_down.PSM), 
+			 							  gsKit_texture_size(tex_bar_down.Width, tex_bar_down.Height, tex_bar_down.PSM),
 			 							  GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_bar_down);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 
@@ -1032,21 +1032,21 @@ void load_Textures(void)
 				tex_bar_delimiter.Width    = pPng->width;
 				tex_bar_delimiter.Height   = pPng->height;
 				tex_bar_delimiter.Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_bar_delimiter.Vram 	   = gsKit_vram_alloc(gsGlobal,
-			 							  		gsKit_texture_size(tex_bar_delimiter.Width, tex_bar_delimiter.Height, tex_bar_delimiter.PSM), 
+			 							  		gsKit_texture_size(tex_bar_delimiter.Width, tex_bar_delimiter.Height, tex_bar_delimiter.PSM),
 			 							  		GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_bar_delimiter);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 	
-	if ((pPng = pngOpenRAW(&option_install_normal, size_option_install_normal)) > 0) { // tex size = 0x4000 
+	if ((pPng = pngOpenRAW(&option_install_normal, size_option_install_normal)) > 0) { // tex size = 0x4000
 		if ((pImgData = malloc(pPng->width * pPng->height * (pPng->bit_depth / 8))) > 0) {
 			if (pngReadImage( pPng, pImgData ) != -1) {
 				tex_option[0].PSM 	   = GS_PSM_CT32;
@@ -1056,17 +1056,17 @@ void load_Textures(void)
 				tex_option[0].Width    = pPng->width;
 				tex_option[0].Height   = pPng->height;
 				tex_option[0].Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_option[0].Vram 	   = gsKit_vram_alloc(gsGlobal,
-			 				 				gsKit_texture_size(tex_option[0].Width, tex_option[0].Height, tex_option[0].PSM), 
+			 				 				gsKit_texture_size(tex_option[0].Width, tex_option[0].Height, tex_option[0].PSM),
 			 				  				GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_option[0]);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 
@@ -1080,17 +1080,17 @@ void load_Textures(void)
 				tex_option[1].Width    = pPng->width;
 				tex_option[1].Height   = pPng->height;
 				tex_option[1].Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_option[1].Vram 	   = gsKit_vram_alloc(gsGlobal,
-			 								gsKit_texture_size(tex_option[1].Width, tex_option[1].Height, tex_option[1].PSM), 
+			 								gsKit_texture_size(tex_option[1].Width, tex_option[1].Height, tex_option[1].PSM),
 			 								GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_option[1]);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 
@@ -1104,17 +1104,17 @@ void load_Textures(void)
 				tex_option[2].Width    = pPng->width;
 				tex_option[2].Height   = pPng->height;
 				tex_option[2].Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_option[2].Vram 	   = gsKit_vram_alloc(gsGlobal,
-			 								gsKit_texture_size(tex_option[2].Width, tex_option[2].Height, tex_option[2].PSM), 
+			 								gsKit_texture_size(tex_option[2].Width, tex_option[2].Height, tex_option[2].PSM),
 			 								GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_option[2]);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 
@@ -1128,17 +1128,17 @@ void load_Textures(void)
 				tex_option[3].Width    = pPng->width;
 				tex_option[3].Height   = pPng->height;
 				tex_option[3].Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_option[3].Vram 	   = gsKit_vram_alloc(gsGlobal,
-			 								gsKit_texture_size(tex_option[3].Width, tex_option[3].Height, tex_option[3].PSM), 
+			 								gsKit_texture_size(tex_option[3].Width, tex_option[3].Height, tex_option[3].PSM),
 			 								GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_option[3]);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 
@@ -1152,17 +1152,17 @@ void load_Textures(void)
 				tex_option[4].Width    = pPng->width;
 				tex_option[4].Height   = pPng->height;
 				tex_option[4].Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_option[4].Vram 	   = gsKit_vram_alloc(gsGlobal,
-			 								gsKit_texture_size(tex_option[4].Width, tex_option[4].Height, tex_option[4].PSM), 
+			 								gsKit_texture_size(tex_option[4].Width, tex_option[4].Height, tex_option[4].PSM),
 			 								GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_option[4]);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 
@@ -1176,17 +1176,17 @@ void load_Textures(void)
 				tex_option[5].Width    = pPng->width;
 				tex_option[5].Height   = pPng->height;
 				tex_option[5].Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_option[5].Vram 	   = gsKit_vram_alloc(gsGlobal,
-			 								gsKit_texture_size(tex_option[5].Width, tex_option[5].Height, tex_option[5].PSM), 
+			 								gsKit_texture_size(tex_option[5].Width, tex_option[5].Height, tex_option[5].PSM),
 			 								GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_option[5]);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 						
@@ -1200,17 +1200,17 @@ void load_Textures(void)
 				tex_credits_coded.Width    = pPng->width;
 				tex_credits_coded.Height   = pPng->height;
 				tex_credits_coded.Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_credits_coded.Vram 	   = gsKit_vram_alloc(gsGlobal,
-			 							  		gsKit_texture_size(tex_credits_coded.Width, tex_credits_coded.Height, tex_credits_coded.PSM), 
+			 							  		gsKit_texture_size(tex_credits_coded.Width, tex_credits_coded.Height, tex_credits_coded.PSM),
 			 							  		GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_credits_coded);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 		
@@ -1224,17 +1224,17 @@ void load_Textures(void)
 				tex_credits_gui.Width    = pPng->width;
 				tex_credits_gui.Height   = pPng->height;
 				tex_credits_gui.Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_credits_gui.Vram 	 = gsKit_vram_alloc(gsGlobal,
-			 							 		gsKit_texture_size(tex_credits_gui.Width, tex_credits_gui.Height, tex_credits_gui.PSM), 
+			 							 		gsKit_texture_size(tex_credits_gui.Width, tex_credits_gui.Height, tex_credits_gui.PSM),
 			 							  		GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_credits_gui);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 	
@@ -1248,17 +1248,17 @@ void load_Textures(void)
 				tex_highlight.Width    = pPng->width;
 				tex_highlight.Height   = pPng->height;
 				tex_highlight.Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_highlight.Vram 	   = gsKit_vram_alloc(gsGlobal,
-			 							 		gsKit_texture_size(tex_highlight.Width, tex_highlight.Height, tex_highlight.PSM), 
+			 							 		gsKit_texture_size(tex_highlight.Width, tex_highlight.Height, tex_highlight.PSM),
 			 							  		GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_highlight);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 
@@ -1272,17 +1272,17 @@ void load_Textures(void)
 				tex_highlight_bw.Width    = pPng->width;
 				tex_highlight_bw.Height   = pPng->height;
 				tex_highlight_bw.Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_highlight_bw.Vram 	  = gsKit_vram_alloc(gsGlobal,
-			 							 		gsKit_texture_size(tex_highlight_bw.Width, tex_highlight_bw.Height, tex_highlight_bw.PSM), 
+			 							 		gsKit_texture_size(tex_highlight_bw.Width, tex_highlight_bw.Height, tex_highlight_bw.PSM),
 			 							  		GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_highlight_bw);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 		
@@ -1296,17 +1296,17 @@ void load_Textures(void)
 				tex_icon_ok.Width    = pPng->width;
 				tex_icon_ok.Height   = pPng->height;
 				tex_icon_ok.Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_icon_ok.Vram 	   = gsKit_vram_alloc(gsGlobal,
-		 							 		gsKit_texture_size(tex_icon_ok.Width, tex_icon_ok.Height, tex_icon_ok.PSM), 
+		 							 		gsKit_texture_size(tex_icon_ok.Width, tex_icon_ok.Height, tex_icon_ok.PSM),
 		 							  		GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_icon_ok);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 	
@@ -1320,17 +1320,17 @@ void load_Textures(void)
 				tex_icon_warning.Width    = pPng->width;
 				tex_icon_warning.Height   = pPng->height;
 				tex_icon_warning.Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_icon_warning.Vram 	  = gsKit_vram_alloc(gsGlobal,
-		 							 			gsKit_texture_size(tex_icon_warning.Width, tex_icon_warning.Height, tex_icon_warning.PSM), 
+		 							 			gsKit_texture_size(tex_icon_warning.Width, tex_icon_warning.Height, tex_icon_warning.PSM),
 		 							  			GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_icon_warning);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 
@@ -1344,17 +1344,17 @@ void load_Textures(void)
 				tex_icon_error.Width    = pPng->width;
 				tex_icon_error.Height   = pPng->height;
 				tex_icon_error.Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_icon_error.Vram 	= gsKit_vram_alloc(gsGlobal,
-		 							 			gsKit_texture_size(tex_icon_error.Width, tex_icon_error.Height, tex_icon_error.PSM), 
+		 							 			gsKit_texture_size(tex_icon_error.Width, tex_icon_error.Height, tex_icon_error.PSM),
 		 							  			GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_icon_error);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 	
@@ -1368,19 +1368,19 @@ void load_Textures(void)
 				tex_logo.Width    = pPng->width;
 				tex_logo.Height   = pPng->height;
 				tex_logo.Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_logo.Vram 	  = gsKit_vram_alloc(gsGlobal,
-	 						  			gsKit_texture_size(tex_logo.Width, tex_logo.Height, tex_logo.PSM), 
+	 						  			gsKit_texture_size(tex_logo.Width, tex_logo.Height, tex_logo.PSM),
 	 						  			GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_logo);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
-	}	
+	}
 
 	if ((pPng = pngOpenRAW(&font_verdana, size_font_verdana)) > 0) { // tex size = 0x20000
 		if ((pImgData = malloc(pPng->width * pPng->height * (pPng->bit_depth / 8))) > 0) {
@@ -1392,23 +1392,23 @@ void load_Textures(void)
 				tex_font_verdana.Width    = pPng->width;
 				tex_font_verdana.Height   = pPng->height;
 				tex_font_verdana.Filter   = GS_FILTER_NEAREST;
-				#ifdef DEBUG				
-					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);	
+				#ifdef DEBUG
+					printf("VRAM Pointer = %08x  ", gsGlobal->CurrentPointer);
 					printf("texture size = %x\n", gsKit_texture_size(pPng->width, pPng->height, GS_PSM_CT32));
-				#endif	
+				#endif
 				tex_font_verdana.Vram 	   = gsKit_vram_alloc(gsGlobal,
-			 							 		gsKit_texture_size(tex_font_verdana.Width, tex_font_verdana.Height, tex_font_verdana.PSM), 
+			 							 		gsKit_texture_size(tex_font_verdana.Width, tex_font_verdana.Height, tex_font_verdana.PSM),
 			 							  		GSKIT_ALLOC_USERBUFFER);
 				gsKit_texture_upload(gsGlobal, &tex_font_verdana);
 			}
 			pngClose(pPng);
-			free(pImgData);			
+			free(pImgData);
 		}
 	}
 
-	#ifdef DEBUG				
-		printf("Load_GUI last VRAM Pointer = %08x  \n", gsGlobal->CurrentPointer);	
-	#endif	
+	#ifdef DEBUG
+		printf("Load_GUI last VRAM Pointer = %08x  \n", gsGlobal->CurrentPointer);
+	#endif
 }
 
 //----------------------------------------------------
@@ -1427,18 +1427,18 @@ void gfx_set_defaults(void)
 	bar_delimiter_x[5] = 533;
 	bar_delimiter_x[6] = SCREEN_WIDTH + 1;
 	option_x[0] = 25;
-	option_x[1] = 110;	
+	option_x[1] = 110;
 	option_x[2] = 240;
 	option_x[3] = 330;
 	option_x[4] = 453;
 	option_x[5] = 538;
 
-	// Init defaults for GUI	
+	// Init defaults for GUI
 	highlight_alpha = 0x80;
-	logo_alpha = 0x80;			
+	logo_alpha = 0x80;
 	amount = 6;
 	pause_pulse = 0;
-	stop_pulse_done = 0;	
+	stop_pulse_done = 0;
 	log_alpha = 0x80;
 	dialog_alpha = 0;
 	control_alpha = 0;
@@ -1446,10 +1446,10 @@ void gfx_set_defaults(void)
 	pause_control_pulse = 0;
 	dialog_type = 0;
 	internal_dialog_type = 0;
-	dialog_icon = 0;		
+	dialog_icon = 0;
 	selected_dialog_button = 0;
 		
-	// Init defaults for INTRO & OUTRO	
+	// Init defaults for INTRO & OUTRO
 	background_alpha = 0;
 	up_panel_y = 0 - tex_bar_up.Height;
 	down_panel_y = SCREEN_HEIGHT + tex_bar_down.Height + 1;
@@ -1463,7 +1463,7 @@ void gfx_set_defaults(void)
 void Setup_GS(int gs_vmode)
 {
 	// GS Init
-	gsGlobal = gsKit_init_global_custom(gs_vmode,
+	gsGlobal = gsKit_init_global_custom(
 		GS_RENDER_QUEUE_OS_POOLSIZE+GS_RENDER_QUEUE_OS_POOLSIZE/2, //eliminates overflow
 		GS_RENDER_QUEUE_PER_POOLSIZE);
 		
@@ -1471,7 +1471,7 @@ void Setup_GS(int gs_vmode)
 	gsKit_clear(gsGlobal, Black);
 
 	// Screen Position Init
-	gsGlobal->StartX = SCREEN_X; 
+	gsGlobal->StartX = SCREEN_X;
 	gsGlobal->StartY = SCREEN_Y;
 
 	// Buffer Init
@@ -1494,7 +1494,7 @@ void Setup_GS(int gs_vmode)
 
 	// Screen Init
 	gsKit_init_screen(gsGlobal);
-	gsKit_clear(gsGlobal, Black);	
+	gsKit_clear(gsGlobal, Black);
 	gsKit_mode_switch(gsGlobal, GS_ONESHOT);
 }
 
@@ -1502,38 +1502,38 @@ void Setup_GS(int gs_vmode)
 
 void Render_GUI(void)
 {
-	// Flips Framebuffers on VSync	
+	// Flips Framebuffers on VSync
 	gsKit_sync_flip(gsGlobal);
 
 	// Normal User Draw Queue "Execution" (Kicks Oneshot and Persistent Queues)
 	gsKit_queue_exec(gsGlobal);
 	
-	Play_Sound();		
+	Play_Sound();
 }
 
-//--------------------------------------------------------------		
+//--------------------------------------------------------------
 
 void Clear_Screen(void)
 {
-	// Clear screen	
+	// Clear screen
 	gsKit_clear(gsGlobal, Black);
 }
 
-//--------------------------------------------------------------		
+//--------------------------------------------------------------
 
 int Draw_INTRO(void)
 {
 	// return 1 if intro is finished
 	// otherwise return 0
 		
-	int logo_width_grow_done = 0;	
+	int logo_width_grow_done = 0;
 	int logo_height_grow_done = 0;
 	int up_panel_move_done = 0;
-	int down_panel_move_done = 0;	
+	int down_panel_move_done = 0;
 	int intro_done = 0;
 	int background_fadein_done = 0;
 		
-	// Clear screen	
+	// Clear screen
 	gsKit_clear(gsGlobal, Black);
 		
 	// Set Alpha settings
@@ -1547,12 +1547,12 @@ int Draw_INTRO(void)
 	logo_width += (logo_accel * 2.62f);
 	
 	// Check max values
-	if (logo_width >= tex_logo.Width) { 
+	if (logo_width >= tex_logo.Width) {
 		logo_width = tex_logo.Width;
 		logo_width_grow_done = 1;
 	}
 	if (logo_height >= tex_logo.Height) {
-		logo_height = tex_logo.Height;	
+		logo_height = tex_logo.Height;
 		logo_height_grow_done = 1;
 	}
 		
@@ -1566,11 +1566,11 @@ int Draw_INTRO(void)
 		
 		// Check max values
 		if (up_panel_y >= 0) {
-			up_panel_y = 0;		
+			up_panel_y = 0;
 			up_panel_move_done = 1;
 		}
 		if (down_panel_y <= SCREEN_HEIGHT) {
-			down_panel_y = SCREEN_HEIGHT;		
+			down_panel_y = SCREEN_HEIGHT;
 			down_panel_move_done = 1;
 		}
 		if (background_alpha >= 0x80) {
@@ -1587,18 +1587,18 @@ int Draw_INTRO(void)
 		// Draw Down panel
 		draw_down_panel(down_panel_y);
 		
-		#ifdef DEBUG	
+		#ifdef DEBUG
 			printf("intro_background_alpha = %d\n", background_alpha);
 			printf("up_panel_y = %d\n", up_panel_y);
-			printf("down_panel_y = %d\n", down_panel_y);		
-		#endif	
+			printf("down_panel_y = %d\n", down_panel_y);
+		#endif
 	}
 		
-	#ifdef DEBUG	
-		if (!logo_width_grow_done || !logo_height_grow_done) {	
+	#ifdef DEBUG
+		if (!logo_width_grow_done || !logo_height_grow_done) {
 			printf("logo_accel = %f\n", logo_accel);
 			printf("logo_width = %f\n", logo_width);
-			printf("logo_height = %f\n", logo_height);	
+			printf("logo_height = %f\n", logo_height);
 		}
 	#endif
 	
@@ -1611,20 +1611,20 @@ int Draw_INTRO(void)
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 	
     if (logo_width_grow_done && logo_height_grow_done && up_panel_move_done && down_panel_move_done && background_fadein_done)
-    	intro_done = 1;     
+    	intro_done = 1;
 
-    // Return 1 if intro have finished playing    	    
+    // Return 1 if intro have finished playing
     if (intro_done) {
-    	#ifdef DEBUG				
+    	#ifdef DEBUG
 	    	printf("Intro is done\n");
 	    #endif
 	    
 	    return 1;
     }
-    return 0;    
+    return 0;
 }
 
-//--------------------------------------------------------------		
+//--------------------------------------------------------------
 
 int Draw_OUTRO(void)
 {
@@ -1632,11 +1632,11 @@ int Draw_OUTRO(void)
 	// otherwise return 0
 	
 	int up_panel_move_done = 0;
-	int down_panel_move_done = 0;	
+	int down_panel_move_done = 0;
 	int outro_done = 0;
 	int background_fadeout_done = 0;
 		
-	// Clear screen	
+	// Clear screen
 	gsKit_clear(gsGlobal, Black);
 		
 	// Set Alpha settings
@@ -1651,11 +1651,11 @@ int Draw_OUTRO(void)
 
 	// Check max values
 	if (up_panel_y <= (0 - tex_bar_up.Height)) {
-		up_panel_y = 0 - tex_bar_up.Height;		
+		up_panel_y = 0 - tex_bar_up.Height;
 		up_panel_move_done = 1;
 	}
 	if (down_panel_y >= (SCREEN_HEIGHT + tex_bar_down.Height + 1)) {
-		down_panel_y = (SCREEN_HEIGHT + tex_bar_down.Height + 1);		
+		down_panel_y = (SCREEN_HEIGHT + tex_bar_down.Height + 1);
 		down_panel_move_done = 1;
 	}
 	if (background_alpha <= 0x00) {
@@ -1663,11 +1663,11 @@ int Draw_OUTRO(void)
 		background_fadeout_done = 1;
 	}
 		
-	#ifdef DEBUG	
+	#ifdef DEBUG
 		if (!up_panel_move_done || !down_panel_move_done || !background_fadeout_done) {
 			printf("outro_background_alpha = %d\n", background_alpha);
 			printf("up_panel_y = %d\n", up_panel_y);
-			printf("down_panel_y = %d\n", down_panel_y);		
+			printf("down_panel_y = %d\n", down_panel_y);
 		}
 	#endif
 		
@@ -1686,22 +1686,22 @@ int Draw_OUTRO(void)
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
     	
     if (up_panel_move_done && down_panel_move_done && background_fadeout_done)
-    	outro_done = 1;     
+    	outro_done = 1;
 
-    // Return 1 if outro have finished playing    	    
+    // Return 1 if outro have finished playing
     if (outro_done) {
-    	#ifdef DEBUG				
+    	#ifdef DEBUG
 	    	printf("Outro is done\n");
 	    #endif
 
 	    // Just to Play OUTRO more than Once
-	    up_panel_y = 0;		
-	    down_panel_y = SCREEN_HEIGHT;		
+	    up_panel_y = 0;
+	    down_panel_y = SCREEN_HEIGHT;
 	    background_alpha = 0x80;
 	    
 	    return 1;
     }
-    return 0;    
+    return 0;
 }
 
 //--------------------------------------------------------------
@@ -1713,12 +1713,12 @@ int Draw_GUI(int logo, int selected_button, int highlight_pulse, int highlight_b
 	
 	int fade_logo_done = 0;
 	int fadein_log_done = 0;
-	int fadeout_log_done = 0;	
+	int fadeout_log_done = 0;
 	int fadein_dialog_done = 0;
 	int fadeout_dialog_done = 0;
 	int i;
 		
-	// Clear screen	
+	// Clear screen
 	gsKit_clear(gsGlobal, Black);
 		
 	// Set Alpha settings
@@ -1726,36 +1726,36 @@ int Draw_GUI(int logo, int selected_button, int highlight_pulse, int highlight_b
 	gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
 	gsKit_set_test(gsGlobal, GS_ATEST_OFF);
 
-	// Draw background	
+	// Draw background
 	draw_background(0x80);
 								
 	// Draw Up panel
 	draw_up_panel(0, selected_button, highlight_pulse, highlight_blw);
 	
-	// Draw down panel							
+	// Draw down panel
 	draw_down_panel(SCREEN_HEIGHT);
 							
 	
-	// Alpha calculation to control logo fade-in and fade-out		
-	if (logo) {			
+	// Alpha calculation to control logo fade-in and fade-out
+	if (logo) {
 		if (logo_alpha < 0x80) {
-			logo_alpha += 5;	
-			if (logo_alpha > 0x80) logo_alpha = 0x80; 		
+			logo_alpha += 5;
+			if (logo_alpha > 0x80) logo_alpha = 0x80;
 		}
 	}
 	else {
 		fade_logo_done = 0;
 		if (logo_alpha >= 0) {
-			logo_alpha -= 5;	
+			logo_alpha -= 5;
 			if (logo_alpha <= 0) {
-				logo_alpha = 0; 	
+				logo_alpha = 0;
 				fade_logo_done = 1;
 			}
 		}
 		else fade_logo_done = 1;
 	}
 	
-	// Draw logo if needed	
+	// Draw logo if needed
  	if ((!stop_pulse_done || !fade_logo_done) || (logo))	{
 	 	draw_logo(tex_logo.Width, tex_logo.Height, logo_alpha);
 	}
@@ -1767,7 +1767,7 @@ int Draw_GUI(int logo, int selected_button, int highlight_pulse, int highlight_b
 			if (log_alpha >= 0x06) {
 				log_alpha -= 5;
 				if (log_alpha <= 0x06) {
-					log_alpha = 0x06; 		
+					log_alpha = 0x06;
 					fadeout_log_done = 1;
 				}
 			}
@@ -1778,8 +1778,8 @@ int Draw_GUI(int logo, int selected_button, int highlight_pulse, int highlight_b
 				log_alpha += 5;
 				if (log_alpha >= 0x80) {
 					log_alpha = 0x80;
-					fadein_log_done = 1; 	
-				}	
+					fadein_log_done = 1;
+				}
 			}
 		}
 		
@@ -1787,15 +1787,15 @@ int Draw_GUI(int logo, int selected_button, int highlight_pulse, int highlight_b
 		draw_log(log_alpha);
 	}
 
-	fadeout_dialog_done = 0;		
-	fadein_dialog_done = 0;							
+	fadeout_dialog_done = 0;
+	fadein_dialog_done = 0;
 	
 	if (dialog) {
 		// Alpha calculation to control dialog fade-in & out
 		if (dialog_alpha <= 0x80) {
 			dialog_alpha += 5;
 			if (dialog_alpha >= 0x80) {
-				dialog_alpha = 0x80; 		
+				dialog_alpha = 0x80;
 				fadein_dialog_done = 1;
 			}
 		}
@@ -1804,7 +1804,7 @@ int Draw_GUI(int logo, int selected_button, int highlight_pulse, int highlight_b
 		if (dialog_alpha >= 0) {
 			dialog_alpha -= 5;
 			if (dialog_alpha <= 0) {
-				dialog_alpha = 0; 		
+				dialog_alpha = 0;
 				fadeout_dialog_done = 1;
 			}
 		}
@@ -1842,12 +1842,12 @@ int Draw_GUI(int logo, int selected_button, int highlight_pulse, int highlight_b
 		}
 	}
 	else {
-		// In all other cases change dialog type  
+		// In all other cases change dialog type
 		internal_dialog_type = dialog_type;
 	}
 		
 	// Draw dialog
-	draw_dialog(dialog_alpha, control_alpha);	
+	draw_dialog(dialog_alpha, control_alpha);
 	
 				
     gsKit_set_test(gsGlobal, GS_ATEST_ON);
@@ -1861,7 +1861,7 @@ int Draw_GUI(int logo, int selected_button, int highlight_pulse, int highlight_b
     if (dialog) {
 	    if (log) {
 	    	if (fadeout_log_done && fadein_dialog_done) {
-    			#ifdef DEBUG				
+    			#ifdef DEBUG
 	    			printf("Log is faded-out and dialog faded in\n");
 	    		#endif
 	    		return 1;
@@ -1869,7 +1869,7 @@ int Draw_GUI(int logo, int selected_button, int highlight_pulse, int highlight_b
 		}
     	else {
 	    	if (fadein_dialog_done) {
-    			#ifdef DEBUG				
+    			#ifdef DEBUG
 	    			printf("Dialog-only faded in\n");
 	    		#endif
 	    		return 1;
@@ -1880,10 +1880,10 @@ int Draw_GUI(int logo, int selected_button, int highlight_pulse, int highlight_b
     
     // here dialog is OFF
     // if log is ON and dialog is faded out and log is faded in, return 1
-    // if log is ON and else (above) return 0  
-    if (log) { 
+    // if log is ON and else (above) return 0
+    if (log) {
     	if (fadein_log_done && fadeout_dialog_done) {
-   			#ifdef DEBUG				
+   			#ifdef DEBUG
     			printf("Log is faded-in and dialog faded out\n");
     		#endif
     		return 1;
@@ -1893,28 +1893,28 @@ int Draw_GUI(int logo, int selected_button, int highlight_pulse, int highlight_b
    	
     // here dialog is 0, log is 0
     // dialog IS fading out return 0
-	if (dialog_type > 0) 
-   		return 0;    
+	if (dialog_type > 0)
+   		return 0;
     
-	// here dialog is 0, log is 0 and dialog is faded out   		
+	// here dialog is 0, log is 0 and dialog is faded out
     // Return 1 if logo is faded-out and highlight pulse is at maximum
     if (!logo) {
     	if (stop_pulse_done && fade_logo_done) {
-    		#ifdef DEBUG				
+    		#ifdef DEBUG
 	    		printf("Logo is faded-out and highlight pulse is at maximum\n");
 	    	#endif
-	    	stop_pulse_done = 0;	
-	    	fade_logo_done = 0;	
+	    	stop_pulse_done = 0;
+	    	fade_logo_done = 0;
 	    	
 	    	return 1;
     	}
 	}
 	else {
     	if (stop_pulse_done) {
-    		#ifdef DEBUG				
+    		#ifdef DEBUG
 	    		printf("Highlight pulse is at maximum\n");
 	    	#endif
-	    	stop_pulse_done = 0;	
+	    	stop_pulse_done = 0;
 	    	
 	    	return 1;
     	}
