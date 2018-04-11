@@ -220,9 +220,12 @@ pngData *pngOpenRAW(u8 *data, int size)
 	png_set_read_fn(priv->png_ptr, (png_voidp)priv, read_data_fn);
 	png_read_png(priv->png_ptr, priv->info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
 
-	png->width	= priv->info_ptr->width;
-	png->height	= priv->info_ptr->height;
-	png->bit_depth	= priv->info_ptr->channels * 8;
+	png->width = png_get_image_width(priv->png_ptr, priv->info_ptr);
+	png->height = png_get_image_height(priv->png_ptr, priv->info_ptr);
+	png->bit_depth = png_get_bit_depth(priv->png_ptr, priv->info_ptr);
+
+	//FIXME: Should we use this callculation here?
+	//	png->bit_depth	= priv->info_ptr->channels * 8;
 
 	#ifdef DEBUG
 		printf("PNG info: width=%3d ", png->width);
@@ -247,16 +250,16 @@ int pngReadImage(pngData *png, u8 *dest)
 	row_pointers = png_get_rows(priv->png_ptr, priv->info_ptr);
 	row_ptr = 0;		
 
-	for (i = 0; i < priv->info_ptr->height; i++) {
-		memcpy(dest + row_ptr, row_pointers[i], priv->info_ptr->rowbytes);
+	for (i = 0; i < png_get_image_height(priv->png_ptr, priv->info_ptr); i++) {
+		memcpy(dest + row_ptr, row_pointers[i], png_get_rowbytes(priv->png_ptr, priv->info_ptr));
 
 		// need to normalize alpha channel to ps2 range
-		if (priv->info_ptr->channels == 4) {
-			for (y = 3; y < priv->info_ptr->rowbytes; y += 4)
+		if (png_get_channels(priv->png_ptr, priv->info_ptr) == 4) {
+			for (y = 3; y < png_get_rowbytes(priv->png_ptr, priv->info_ptr); y += 4)
 				*(dest + row_ptr + y ) /= 2;
 		}
 
-		row_ptr += priv->info_ptr->rowbytes;
+		row_ptr += png_get_rowbytes(priv->png_ptr, priv->info_ptr);
 	}
 
 	return 1;
